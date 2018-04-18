@@ -1,11 +1,4 @@
 import argparse
-
-
-
-
-
-
-
 def printset(li, level):
     subset = [x for x in li if x[1] == level]
     subset.sort(key=lambda x: float(x[4]), reverse=True)
@@ -73,15 +66,15 @@ def main(filename):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Convert Kraken to CAMI')
+    parser = argparse.ArgumentParser(description='Convert Kraken to CAMI\n'
+                                                 'If you want to save to a file you can pipe the result using ">"\n'
+                                                 'example: Kraken2CAMI.py -i report.text > report.CAMI')
     parser.add_argument('-i', dest='input', type=str,
                         help='Kraken-report file name', required=True)
-    parser.add_argument('-o', dest='output', type=str,
-                         help='CAMI file')
-
     parser.add_argument('-l', dest='level', type=str, help='taxonomy_level comma separated', default="species,genus,phylum")
     parser.add_argument('--sampleid', dest='sampleid', type=str, help='Sample ID', default='')
     parser.add_argument('--ncbitaxid', dest='taxonomyid', type=str, help='NCBI Taxonomy date', default='')
+
     args = parser.parse_args()
     filename = args.input
     sampleid=args.sampleid
