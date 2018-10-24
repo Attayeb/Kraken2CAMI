@@ -1,9 +1,21 @@
+#!/usr/bin/python3
 import argparse
-def printset(li, level):
+def printset(li, level, ranks, precision):
+    taxlevels = ['superkingdum', 'phylum', 'class', 'order', 'family','genus','species']
+    inc = [i for i, j in enumerate(taxlevels) if j in ranks]
     subset = [x for x in li if x[1] == level]
     subset.sort(key=lambda x: float(x[4]), reverse=True)
     total = sum([float(x[4]) for x in subset])
+
     for x in subset:
+        if len(x[2]) <= max(inc):
+            #print(max(inc))
+            #print(x[2])
+            continue
+        if x[4] == '0.'+'0'*precision:
+            continue
+        x[2] = "|".join([x[2][i] for i in inc])
+        x[3] = "|".join([x[3][i] for i in inc])
         print("\t".join(x))
     return subset, total
 
@@ -22,22 +34,34 @@ def main(filename):
                  'S':'species'}
 
     dic = list()
+    total = 0.
     for x in report:
         x = x.split("\t")
         g = x[3]
-        if g != "-":
+        g2 = x[4]
+        if g2=='0':
+            total= total + int(x[1])
+        if g2=='1':
+            total= total + int(x[1])
+        if g not in ["-", "U"]:
             #print(x.strip())
-            dic.append({'percent': x[0],
+            dic.append(
+                {
+                 'percent': x[0],
+                 'cpercent':float(x[1])/total*100,
                  'number1': x[1],
                  'number2': x[2],
                  'tax': x[3],
                  'taxid':x[4],
-                 'taxonomy':x[5].strip()})
+                 'taxonomy':x[5].strip()
+                }
+            )
 
 
     result = list()
     taxidlist=list()
     taxlist=list()
+    formatstring='{:.%df}'%precision
     for x in dic:
         if x['tax']=='U':
             continue
@@ -57,9 +81,9 @@ def main(filename):
                 taxlist[taxlevel] = x['taxonomy']
         result.append([x['taxid'],
                        levelsdic[x['tax']],
-                       "|".join([str(x) for x in taxidlist]),
-                       "|".join(taxlist),
-                       str(x['percent'])])
+                       [str(x) for x in taxidlist],
+                       taxlist,
+                       formatstring.format(x['cpercent'])])
 
     f.close()
     return (result)
@@ -74,21 +98,26 @@ if __name__ == "__main__":
     parser.add_argument('-l', dest='level', type=str, help='taxonomy_level comma separated', default="species,genus,phylum")
     parser.add_argument('--sampleid', dest='sampleid', type=str, help='Sample ID', default='')
     parser.add_argument('--ncbitaxid', dest='taxonomyid', type=str, help='NCBI Taxonomy date', default='')
-
+    parser.add_argument('--ranks', dest='ranks', type=str, help='Ranks comma separated', default="superkingdom,phylum,class,order,family,genus,species")
+    parser.add_argument('--precision', dest='precision', type=int, help='precision of precentage', default=5)
     args = parser.parse_args()
     filename = args.input
     sampleid=args.sampleid
     taxonomyid=args.taxonomyid
     level = args.level
+    precision = args.precision
+    ranks = args.ranks.split(",")
     result = main(filename=filename)
     levels = level.split(",")
     print('''# Taxonomic Profiling Output
 @SampleID:%s
 @Version:0.9.1
-@Ranks:superkingdom|phylum|class|order|family|genus|species
+@Ranks:%s
 @TaxonomyID:%s
-@@TAXID	RANK	TAXPATH	TAXPATHSN	PERCENTAGE'''%(sampleid, taxonomyid))
+@@TAXID	RANK	TAXPATH	TAXPATHSN	PERCENTAGE'''%(sampleid, "|".join(ranks), taxonomyid))
     for x in levels:
-        printset(result, x)
+        #print(x)
+        #print(result)
+        printset(result, level=x, ranks=ranks[:ranks.index(x)+1], precision=precision)
 
 
